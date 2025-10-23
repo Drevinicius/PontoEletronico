@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema RH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .success-animation {
+            animation: successPulse 0.6s ease-out;
+        }
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+
+
+    <main class="flex items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
+        <!-- Tela de Login -->
+        <div id="loginScreen" class="fade-in">
+            <div class="max-w-md mx-auto">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Acesso ao Sistema</h2>
+                        <p class="text-gray-600">Entre com suas credenciais para continuar</p>
+                    </div>
+
+                    <form id="loginForm" class="space-y-6">
+                        <div>
+                            <label for="usuario" class="block text-sm font-medium text-gray-700 mb-2">Usuário</label>
+                            <input type="text" id="usuario" name="usuario" required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                                   placeholder="Digite seu usuário">
+                        </div>
+
+                        <div>
+                            <label for="senha" class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                            <div class="relative">
+                                <input type="password" id="senha" name="senha" required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-12"
+                                       placeholder="Digite sua senha">
+                                <button type="button" id="toggleSenha" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="lembrar" name="lembrar" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="lembrar" class="ml-2 block text-sm text-gray-700">Lembrar de mim</label>
+                            </div>
+                            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Esqueceu a senha?</a>
+                            <a href="admin/" class="text-sm text-indigo-600 hover:text-indigo-500">Admin?</a>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full px-4 py-3 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            Entrar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mensagem de Sucesso -->
+        <div id="successMessage" class="hidden fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+            <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span id="successText">Operação realizada com sucesso!</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+const LOGIN_API_URL = '/api/login/'; // URL da sua view Django
+
+
+
+    // Toggle para mostrar/ocultar senha
+    document.getElementById('toggleSenha').addEventListener('click', function() {
+        const senhaInput = document.getElementById('senha');
+        const tipo = senhaInput.type === 'password' ? 'text' : 'password';
+        senhaInput.type = tipo;
+    });
+
+    // Função para mostrar mensagem de sucesso (mantida)
+    function showSuccess(message) {
+        const successMessage = document.getElementById('successMessage');
+        const successText = document.getElementById('successText');
+
+        successText.textContent = message;
+        successMessage.classList.remove('hidden');
+        successMessage.classList.add('success-animation');
+
+        setTimeout(() => {
+            successMessage.classList.add('hidden');
+            successMessage.classList.remove('success-animation');
+        }, 3000);
+    }
+
+    // Função para mostrar mensagem de erro (mantida)
+    function showError(message) {
+        // ... (código da função showError)
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        errorDiv.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+            document.body.removeChild(errorDiv);
+        }, 3000);
+    }
+
+
+    // LÓGICA DE LOGIN COM INTEGRAÇÃO DJANGO
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('usuario').value;
+        const password = document.getElementById('senha').value;
+
+        try {
+            const response = await fetch(LOGIN_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Importante: Em produção, adicione o header CSRF aqui se não estiver usando csrf_exempt!
+                },
+                body: JSON.stringify({
+                    usuario: username, // Deve ser 'usuario' para bater com sua view Django
+                    senha: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Login bem-sucedido
+
+                // 1. Salvar dados do usuário logado (inclui o ID do Funcionario)
+                localStorage.setItem('usuarioLogado', JSON.stringify({
+                    usuario: data.usuario,
+                    nome: data.nome,
+                    id: data.id, // O ID do Funcionario/User retornado pelo Django
+                    perfil_tipo: data.perfil_tipo
+                }));
+
+                showSuccess(`Bem-vindo, ${data.nome}! Redirecionando...`);
+
+                // 2. Redirecionar para a página de ponto
+                setTimeout(() => {
+                    // Substitua 'index.html' pelo caminho da sua página de ponto, se for diferente
+                    window.location.href = '{% url "main:registro" %}';
+                }, 1500);
+
+            } else {
+                // Login falhou (Usuário/Senha incorretos)
+                showError(data.detail || 'Erro desconhecido no login.');
+            }
+        } catch (error) {
+            console.error('Erro de rede:', error);
+            showError('Não foi possível conectar ao servidor. Tente novamente.');
+        }
+    });
+
+    // Adicione esta função para verificar se o usuário já está logado ao carregar a página
+    // function checkLogin() {
+    //     if (localStorage.getItem('usuarioLogado')) {
+    //         window.location.href = '{% url "main:registro" %}';
+    //     }
+    // }
+    // checkLogin();
+
+        // Inicializar sistema de login
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'991a7382248e6d3a',t:'MTc2MDk4MzYwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Pontos - Sistema RH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            box-sizing: border-box;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pagination-dot {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .pagination-dot.active {
+            background-color: #4f46e5;
+            transform: scale(1.2);
+        }
+        .pagination-dot:hover {
+            background-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2L3 7v11a2 2 0 002 2h10a2 2 0 002-2V7l-7-5z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-semibold text-gray-900">Sistema RH</h1>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.location.href = '{% url "main:registro" %}'"
+                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Voltar para Registro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div id="historicoScreen" class="fade-in">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Histórico de Pontos</h2>
+                        <p class="text-gray-600 mt-1">Consulte os registros de entrada e saída</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span id="totalRegistros">0 registros encontrados</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Filtros de Busca</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label for="dataInicio" class="block text-sm font-medium text-gray-700 mb-2">Data Inicial</label>
+                            <input type="date" id="dataInicio" name="dataInicio"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                        </div>
+
+                        <div>
+                            <label for="dataFim" class="block text-sm font-medium text-gray-700 mb-2">Data Final</label>
+                            <input type="date" id="dataFim" name="dataFim"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                        </div>
+
+                        <div>
+                            <label for="nomeFuncionarioLogado" class="block text-sm font-medium text-gray-700 mb-2">Funcionário</label>
+                            <input type="text" id="nomeFuncionarioLogado"
+                                readonly
+                                placeholder="Carregando nome..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
+                        </div>
+
+                        <div>
+                            <label for="tipoFiltro" class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                            <select id="tipoFiltro" name="tipoFiltro"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                                <option value="">Todos</option>
+                                <option value="entrada">Entrada</option>
+                                <option value="saida">Saída</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button id="limparFiltros"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Limpar Filtros
+                        </button>
+                        <button id="aplicarFiltros"
+                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto mb-6">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funcionário</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaRegistros" class="bg-white divide-y divide-gray-200">
+                            <!-- Os registros serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINAÇÃO -->
+                <div id="paginacaoContainer" class="hidden flex flex-col items-center space-y-4 mt-6">
+                    <div class="text-sm text-gray-600">
+                        Mostrando <span id="registrosInicio">0</span> - <span id="registrosFim">0</span> de <span id="registrosTotal">0</span> registros
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="paginaAnterior" class="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+
+                        <div id="paginacaoDots" class="flex items-center space-x-2">
+                            <!-- As bolinhas serão geradas aqui -->
+                        </div>
+
+                        <button id="proximaPagina" class="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="semRegistros" class="hidden text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhum registro encontrado</h3>
+                    <p class="mt-1 text-sm text-gray-500">Não há registros de ponto no período selecionado.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // CONFIGURAÇÃO
+        const HISTORICO_API_URL = '/api/historico-ponto/';
+        const REGISTROS_POR_PAGINA = 15;
+        let loggedEmployeeId = null;
+        let todosRegistros = [];
+        let paginaAtual = 1;
+        let totalPaginas = 1;
+
+        // FUNÇÕES BÁSICAS
+        function showError(message) {
+            alert('Erro: ' + message);
+            console.error(message);
+        }
+
+        function getLoggedUser() {
+            const usuarioLogado = localStorage.getItem('usuarioLogado');
+            if (!usuarioLogado) {
+                showError('Sessão expirada. Redirecionando para o login.');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return null;
+            }
+            return JSON.parse(usuarioLogado);
+        }
+
+        // FUNÇÃO PRINCIPAL PARA BUSCAR REGISTROS
+        async function fetchRegistros(params = {}) {
+            try {
+                const url = new URL(HISTORICO_API_URL, window.location.origin);
+
+                Object.keys(params).forEach(key => {
+                    if (params[key]) {
+                        url.searchParams.append(key, params[key]);
+                    }
+                });
+
+                console.log('🔍 Buscando registros com URL:', url.toString());
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+                const registros = await response.json();
+                console.log('✅ Registros recebidos:', registros.length, 'registros');
+
+                return registros;
+
+            } catch (error) {
+                console.error('❌ Erro ao buscar registros:', error);
+                throw error;
+            }
+        }
+
+        // FUNÇÃO PARA EXIBIR REGISTROS NA TABELA COM PAGINAÇÃO
+        function exibirRegistrosPaginados(registros) {
+            const tabela = document.getElementById('tabelaRegistros');
+            const semRegistros = document.getElementById('semRegistros');
+            const totalRegistros = document.getElementById('totalRegistros');
+            const paginacaoContainer = document.getElementById('paginacaoContainer');
+
+            console.log('🎯 Exibindo registros:', registros.length, 'registros totais');
+
+            // Salvar todos os registros
+            todosRegistros = registros;
+            totalPaginas = Math.ceil(registros.length / REGISTROS_POR_PAGINA);
+            paginaAtual = 1;
+
+            // Verificar se há registros
+            if (!registros || registros.length === 0) {
+                tabela.innerHTML = '';
+                semRegistros.classList.remove('hidden');
+                paginacaoContainer.classList.add('hidden');
+                totalRegistros.textContent = '0 registros encontrados';
+                return;
+            }
+
+            // Esconder mensagem de "sem registros"
+            semRegistros.classList.add('hidden');
+            totalRegistros.textContent = `${registros.length} registro${registros.length !== 1 ? 's' : ''} encontrado${registros.length !== 1 ? 's' : ''}`;
+
+            // Mostrar/Esconder paginação
+            if (registros.length > REGISTROS_POR_PAGINA) {
+                paginacaoContainer.classList.remove('hidden');
+                atualizarPaginacao();
+            } else {
+                paginacaoContainer.classList.add('hidden');
+                // Mostrar todos os registros se couberem em uma página
+                exibirPagina(registros);
+            }
+        }
+
+        // EXIBIR PÁGINA ESPECÍFICA
+        function exibirPagina(registros = todosRegistros) {
+            const tabela = document.getElementById('tabelaRegistros');
+            const inicio = (paginaAtual - 1) * REGISTROS_POR_PAGINA;
+            const fim = Math.min(inicio + REGISTROS_POR_PAGINA, registros.length);
+            const registrosPagina = registros.slice(inicio, fim);
+
+            console.log(`📄 Exibindo página ${paginaAtual}: registros ${inicio + 1} a ${fim}`);
+
+            // Atualizar contadores
+            document.getElementById('registrosInicio').textContent = inicio + 1;
+            document.getElementById('registrosFim').textContent = fim;
+            document.getElementById('registrosTotal').textContent = registros.length;
+
+            // Criar HTML dos registros
+            let html = '';
+            registrosPagina.forEach(registro => {
+                const tipoClass = registro.tipo === 'entrada' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                const tipoTexto = registro.tipo === 'entrada' ? 'Entrada' : 'Saída';
+
+                html += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${registro.id || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${registro.funcionarioNome || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${tipoClass}">
+                                ${tipoTexto}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${registro.data || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${registro.hora || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+
+            tabela.innerHTML = html;
+        }
+
+        // ATUALIZAR PAGINAÇÃO
+        function atualizarPaginacao() {
+            const paginacaoDots = document.getElementById('paginacaoDots');
+            const paginaAnterior = document.getElementById('paginaAnterior');
+            const proximaPagina = document.getElementById('proximaPagina');
+
+            // Atualizar estado dos botões
+            paginaAnterior.disabled = paginaAtual === 1;
+            proximaPagina.disabled = paginaAtual === totalPaginas;
+
+            // Gerar bolinhas de paginação
+            let dotsHTML = '';
+            for (let i = 1; i <= totalPaginas; i++) {
+                const isActive = i === paginaAtual;
+                dotsHTML += `
+                    <div class="pagination-dot w-3 h-3 rounded-full ${isActive ? 'active bg-indigo-600' : 'bg-gray-300'}"
+                         data-pagina="${i}"
+                         onclick="mudarPagina(${i})">
+                    </div>
+                `;
+            }
+
+            paginacaoDots.innerHTML = dotsHTML;
+            exibirPagina();
+        }
+
+        // MUDAR PÁGINA
+        function mudarPagina(novaPagina) {
+            if (novaPagina >= 1 && novaPagina <= totalPaginas) {
+                paginaAtual = novaPagina;
+                atualizarPaginacao();
+            }
+        }
+
+        // CARREGAR TODOS OS REGISTROS
+        async function carregarTodosRegistros() {
+            console.log('🔄 Carregando todos os registros...');
+
+            const params = {
+                funcionario_id: loggedEmployeeId
+            };
+
+            try {
+                const registros = await fetchRegistros(params);
+                exibirRegistrosPaginados(registros);
+            } catch (error) {
+                console.error('❌ Erro ao carregar registros:', error);
+                showError('Erro ao carregar o histórico de pontos.');
+                exibirRegistrosPaginados([]);
+            }
+        }
+
+        // APLICAR FILTROS
+        async function aplicarFiltros() {
+            console.log('🔧 Aplicando filtros...');
+
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            const tipoFiltro = document.getElementById('tipoFiltro').value;
+
+            const params = {
+                funcionario_id: loggedEmployeeId,
+                data_inicio: dataInicio,
+                data_fim: dataFim,
+                tipo: tipoFiltro,
+            };
+
+            try {
+                const registros = await fetchRegistros(params);
+                exibirRegistrosPaginados(registros);
+            } catch (error) {
+                console.error('❌ Erro ao aplicar filtros:', error);
+                showError('Erro ao filtrar registros.');
+                exibirRegistrosPaginados([]);
+            }
+        }
+
+        // LIMPAR FILTROS
+        function limparFiltros() {
+            console.log('🧹 Limpando filtros...');
+
+            document.getElementById('dataInicio').value = '';
+            document.getElementById('dataFim').value = '';
+            document.getElementById('tipoFiltro').value = '';
+
+            carregarTodosRegistros();
+        }
+
+        // INICIALIZAÇÃO
+        function inicializarHistorico() {
+            console.log('🚀 Inicializando histórico...');
+
+            const user = getLoggedUser();
+            if (!user) return;
+
+            loggedEmployeeId = user.id;
+
+            const nomeFuncionarioLogadoInput = document.getElementById('nomeFuncionarioLogado');
+            if (nomeFuncionarioLogadoInput) {
+                nomeFuncionarioLogadoInput.value = `${user.nome} (ID: ${user.id})`;
+            }
+
+            // Carregar registros
+            carregarTodosRegistros();
+        }
+
+        // EVENT LISTENERS
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM Carregado - Configurando event listeners...');
+
+            inicializarHistorico();
+
+            document.getElementById('aplicarFiltros').addEventListener('click', aplicarFiltros);
+            document.getElementById('limparFiltros').addEventListener('click', limparFiltros);
+            document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
+            document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
+            document.getElementById('tipoFiltro').addEventListener('change', aplicarFiltros);
+
+            // Event listeners para paginação
+            document.getElementById('paginaAnterior').addEventListener('click', () => mudarPagina(paginaAtual - 1));
+            document.getElementById('proximaPagina').addEventListener('click', () => mudarPagina(paginaAtual + 1));
+        });
+
+        // TESTE MANUAL
+        window.testarAPI = function() {
+            console.log('🧪 Testando API manualmente...');
+            fetchRegistros({ funcionario_id: loggedEmployeeId })
+                .then(registros => {
+                    console.log('📊 Resultado do teste:', registros.length, 'registros');
+                    exibirRegistrosPaginados(registros);
+                })
+                .catch(error => console.error('❌ Erro no teste:', error));
+        };
+    </script>
+</body>
+</html>
